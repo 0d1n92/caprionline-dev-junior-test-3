@@ -1,19 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Rating, Spinner } from 'flowbite-react';
+import { Button, Rating, Spinner, Dropdown } from 'flowbite-react';
+import { FaArrowDown91,FaArrowDown19 } from "react-icons/fa6";
 
 const App = props => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchMovies = () => {
+  const fetchMovies = (queryParameters = {}) => {
+    let url = "http://localhost:8000/movies"
+    if(Object.keys(queryParameters).length !== 0) {
+    const params = new URLSearchParams(queryParameters);
+     url += '?' + params
+    }
     setLoading(true);
-
-    return fetch('http://localhost:8000/movies')
+    return fetch(url)
       .then(response => response.json())
       .then(data => {
         setMovies(data);
         setLoading(false);
       });
+  }
+  const onSorting = (queryParameters) => {
+    fetchMovies(queryParameters);
+  }
+
+  const onSelectGenres  = (queryParameters) => {
+    fetchMovies(queryParameters);
   }
 
   useEffect(() => {
@@ -23,7 +35,7 @@ const App = props => {
   return (
     <Layout>
       <Heading />
-
+        <SearchBar onSorting={onSorting} onSelectGenres={onSelectGenres} />
       <MovieList loading={loading}>
         {movies.map((item, key) => (
           <MovieItem key={key} {...item} />
@@ -130,4 +142,80 @@ const MovieItem = props => {
   );
 };
 
+
+
+const SearchBar = ({onSorting, onSelectGenres}) => {
+ const [genres, setGenres] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/genres')
+      .then(response => response.json())
+      .then(data => {
+        setGenres(data);
+      })},
+      []
+  );
+
+  const changeSort = (type) => {
+  let sort = null;
+  if(type == "ASC") {
+    sort = "DESC";
+  }
+  if(type == null) {
+    sort ="ASC"
+  }
+
+  return sort;
+}
+  const [sorts, setSorts] = useState({
+      rating: null,
+      release: null,
+      genres: null,
+    });
+
+
+  const handleSort= (value) => {
+    let result = sorts;
+     if(value == 'ACTION_RATE') {
+          result = {...result, rating: changeSort(result.rating)}
+     }
+
+     if(value == 'ACTION_REALESE') {
+       result = {...result, release: changeSort(result.release)}
+     }
+
+     setSorts(result);
+
+    onSorting(result);
+  };
+
+  const handleDropdownChange = (value) => {
+    var result = {...sorts, genres : value}
+    setSorts(result);
+    onSelectGenres(result);
+  };
+
+  return (
+    <div className='flex flex-row justify-between mb-20'>
+      <Dropdown color="gray" label={(sorts.genres)? sorts.genres : "All"} onChange={(e) => handleDropdownChange(e)}>
+        <Dropdown.Item  onClick={() => handleDropdownChange(null)}>All</Dropdown.Item>
+        {
+          genres.map((item, index) =>
+            {
+             return <Dropdown.Item onClick={() => handleDropdownChange(item.name)} key={index}>{item.name}</Dropdown.Item>
+            }
+          )
+        }
+      </Dropdown>
+      <Button.Group>
+        <Button color="gray" onClick={() => handleSort('ACTION_RATE')}>
+          Ordina per voto {sorts.rating ===  "ASC"? <FaArrowDown19 size={20} /> : sorts.rating ===  "DESC"? <FaArrowDown91 size={20} /> : null}
+        </Button>
+        <Button color="gray" onClick={() => handleSort('ACTION_REALESE')}>
+          Ordina per uscita {sorts.release ===  "ASC"? <FaArrowDown19 size={20} /> : sorts.release ===  "DESC"? <FaArrowDown91 size={20} /> : null}
+        </Button>
+       </Button.Group>
+    </div>
+  );
+}
 export default App;
