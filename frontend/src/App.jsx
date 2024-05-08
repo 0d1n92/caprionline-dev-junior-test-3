@@ -5,6 +5,7 @@ import { FaArrowDown91,FaArrowDown19 } from "react-icons/fa6";
 const App = props => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [founded, setFounded]= useState(true);
 
   const fetchMovies = (queryParameters = {}) => {
     let url = "http://localhost:8000/movies"
@@ -13,19 +14,26 @@ const App = props => {
      url += '?' + params
     }
     setLoading(true);
+    setFounded(true);
     return fetch(url)
-      .then(response => response.json())
+      .then(response => {
+        if(response.status === 204) {
+           setLoading(false);
+           setMovies([]);
+           setFounded(false);
+          return;
+        }
+        return response.json()
+      })
       .then(data => {
-        setMovies(data);
+        if(data) {
+          setMovies(data);
+        }
         setLoading(false);
       });
   }
-  const onSorting = (queryParameters) => {
-    fetchMovies(queryParameters);
-  }
-
-  const onSelectGenres  = (queryParameters) => {
-    fetchMovies(queryParameters);
+  const onSortingAndFiltring = (queryParameters) => {
+      fetchMovies(queryParameters);
   }
 
   useEffect(() => {
@@ -35,12 +43,17 @@ const App = props => {
   return (
     <Layout>
       <Heading />
-        <SearchBar onSorting={onSorting} onSelectGenres={onSelectGenres} />
-      <MovieList loading={loading}>
-        {movies.map((item, key) => (
-          <MovieItem key={key} {...item} />
-        ))}
-      </MovieList>
+        <SearchBar onSorting={onSortingAndFiltring} onSelectGenres={onSortingAndFiltring} />
+       { (founded) ?
+            <MovieList loading={loading}>
+              {movies.map((item, key) => (
+                <MovieItem key={key} {...item} />
+              ))}
+            </MovieList> :
+              <div className='flex justify-center item-center'>
+                  <h3 className='text-gray-500 lg:mb-16 sm:text-xl dark:text-gray-400'>No movies founded</h3>
+              </div>
+        }
     </Layout>
   );
 };
@@ -149,9 +162,17 @@ const SearchBar = ({onSorting, onSelectGenres}) => {
 
   useEffect(() => {
     fetch('http://localhost:8000/genres')
-      .then(response => response.json())
+      .then(response => {
+        if(response.status === 204) {
+          return;
+        }
+         setGenres([]);
+         return response.json();
+      })
       .then(data => {
-        setGenres(data);
+        if(data) {
+          setGenres(data);
+        }
       })},
       []
   );
@@ -176,11 +197,11 @@ const SearchBar = ({onSorting, onSelectGenres}) => {
 
   const handleSort= (value) => {
     let result = sorts;
-     if(value == 'ACTION_RATE') {
+     if(value === 'ACTION_RATE') {
           result = {...result, rating: changeSort(result.rating)}
      }
 
-     if(value == 'ACTION_REALESE') {
+     if(value === 'ACTION_REALESE') {
        result = {...result, release: changeSort(result.release)}
      }
 

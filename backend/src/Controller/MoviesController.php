@@ -30,6 +30,11 @@ class MoviesController extends AbstractController
         } else {
           $movies = $this->movieRepository->findAll($release, $rating);
         }
+
+        if (empty($movies)) {
+          // Risposta con codice di stato 204 No Content
+          return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+        }
         $data = $this->serializer->serialize($movies, "json", ["groups" => "default"]);
 
         return new JsonResponse($data, json: true);

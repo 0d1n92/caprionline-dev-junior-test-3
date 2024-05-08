@@ -21,7 +21,12 @@ class GenresController extends AbstractController
   public function list(): JsonResponse
   {
     $genres = $this->genreRepository->findAll();
+    if (empty($genres)) {
+      // Risposta con codice di stato 204 No Content
+      return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+    }
     $data = $this->serializer->serialize($genres, "json", ["groups" => "default"]);
+
     return new JsonResponse($data, json: true);
   }
 }
