@@ -3,6 +3,7 @@ services:
     build: infra/docker/php-8.3
     ports:
       - 8000:8000
+      - 9003:9003
     volumes:
       - .:/app
     entrypoint: tail -f /dev/null
